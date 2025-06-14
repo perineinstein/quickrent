@@ -61,6 +61,16 @@ const ProfileScreen = ({ navigation }) => {
       >
         Logout
       </Button>
+
+      <Button
+        mode="outlined"
+        onPress={() => navigation.navigate('MyPayments')}
+        style={styles.paymentButton}
+        labelStyle={{ color: '#00C9A7' }}
+      >
+        View Payment History
+      </Button>
+
     </View>
   );
 };
@@ -75,6 +85,11 @@ const styles = StyleSheet.create({
   editButtonText: { color: '#00C9A7' },
   logoutButton: { backgroundColor: '#00C9A7' },
   logoutButtonText: { color: 'white', fontWeight: 'bold' },
+  paymentButton: {
+  borderColor: '#00C9A7',
+  marginTop: 15
+}
+
 });
 
 export default ProfileScreen;

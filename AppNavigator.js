@@ -153,6 +153,14 @@ export default function AppNavigator() {
             <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="Chat" component={ChatScreen} />
+            <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
+            <Stack.Screen name="MonthlyReport" component={MonthlyReportScreen} />
+            <Stack.Screen name="AdminSettings" component={AdminSettingsScreen} />
+            <Stack.Screen name="UserManagement" component={UserManagementScreen} />
+            <Stack.Screen name="MyPayments" component={MyPaymentsScreen} />
+            <Stack.Screen name="ReceivedPayments" component={ReceivedPaymentsScreen} />
+
+
           </>
         )}
       </Stack.Navigator>
