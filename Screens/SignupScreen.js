@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
-import { auth } from '../firebase'; // adjust path to your firebase.js
+import { auth, db } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const SignupScreen = ({ navigation }) => {
@@ -10,6 +11,7 @@ const SignupScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [userType, setUserType] = useState('tenant'); // 'tenant' or 'landlord'
 
   const validateForm = () => {
     const errors = {};
@@ -23,11 +25,28 @@ const SignupScreen = ({ navigation }) => {
   const handleEmailSignup = async () => {
     if (!validateForm()) return;
     setLoading(true);
+
     try {
       const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+      const { uid } = userCredential.user;
+
+      // Save user info in Firestore
+      await setDoc(doc(db, 'users', uid), {
+        email,
+        userType,
+        createdAt: new Date(),
+      });
+
       await userCredential.user.sendEmailVerification();
       Alert.alert('Success', 'Account created. Please verify your email.');
-      navigation.navigate('Login');
+
+      // Redirect
+      if (userType === 'landlord') {
+        navigation.replace('AddBankDetails');
+      } else {
+        navigation.navigate('Login');
+      }
+
     } catch (error) {
       console.error('Signup error:', error);
       Alert.alert('Error', error.message);
@@ -67,6 +86,29 @@ const SignupScreen = ({ navigation }) => {
         secureTextEntry={!showPassword}
       />
       {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+
+      <Text style={{ color: 'white', marginTop: 20 }}>I am a:</Text>
+      <View style={styles.roleContainer}>
+        <TouchableOpacity
+          style={[
+            styles.userTypeButton,
+            userType === 'tenant' && styles.userTypeSelected
+          ]}
+          onPress={() => setUserType('tenant')}
+        >
+          <Text style={styles.userTypeText}>Tenant</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.userTypeButton,
+            userType === 'landlord' && styles.userTypeSelected
+          ]}
+          onPress={() => setUserType('landlord')}
+        >
+          <Text style={styles.userTypeText}>Landlord</Text>
+        </TouchableOpacity>
+      </View>
 
       <Button
         mode="contained"
@@ -141,6 +183,28 @@ const styles = StyleSheet.create({
     color: '#00C9A7',
     fontWeight: 'bold',
   },
+  roleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 10,
+  },
+  userTypeButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#2A2A2A',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#444'
+  },
+  userTypeSelected: {
+    backgroundColor: '#00C9A7',
+  },
+  userTypeText: {
+    color: 'white',
+    fontWeight: 'bold',
+  }
 });
 
 export default SignupScreen;

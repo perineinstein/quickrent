@@ -159,6 +159,8 @@ export default function AppNavigator() {
             <Stack.Screen name="UserManagement" component={UserManagementScreen} />
             <Stack.Screen name="MyPayments" component={MyPaymentsScreen} />
             <Stack.Screen name="ReceivedPayments" component={ReceivedPaymentsScreen} />
+            <Stack.Screen name="AddBankDetails" component={AddBankDetailsScreen} />
+
 
 
           </>

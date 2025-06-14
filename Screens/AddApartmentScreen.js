@@ -1,17 +1,45 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, Alert, ScrollView
+  View, Text, TextInput, StyleSheet, Alert, ScrollView, TouchableOpacity, Image
 } from 'react-native';
 import { Button } from 'react-native-paper';
-import { auth, db } from '../firebase'; // ✅ Web SDK
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
+import storage from '@react-native-firebase/storage';
+import { auth, db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 const AddApartmentScreen = ({ navigation }) => {
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
+  const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
+
+  const handlePickImages = () => {
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: 5 }, response => {
+      if (!response.didCancel && !response.errorCode) {
+        const selected = response.assets.map((asset) => asset.uri);
+        setImages(selected);
+      }
+    });
+  };
+
+  const uploadImages = async () => {
+    const urls = [];
+
+    for (const uri of images) {
+      const filename = uri.substring(uri.lastIndexOf('/') + 1);
+      const reference = storage().ref(`apartment_images/${filename}`);
+      await reference.putFile(uri);
+      const url = await reference.getDownloadURL();
+      urls.push(url);
+    }
+
+    return urls;
+  };
 
   const handleAddApartment = async () => {
     if (!title || !location || !price || !description) {
@@ -24,18 +52,22 @@ const AddApartmentScreen = ({ navigation }) => {
     try {
       const user = auth.currentUser;
 
-      await addDoc(collection(db, 'apartments'), {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const subaccount = userDoc.exists() ? userDoc.data().subaccount_code : null;
+
+      const imageUrls = await uploadImages();
+
+      await firestore().collection('apartments').add({
         title,
         location,
         price: parseFloat(price),
         description,
-        images: [
-          'https://via.placeholder.com/400x300.png?text=Apartment+Image'
-        ],
+        images: imageUrls,
         landlordId: user.uid,
         landlordPhone: user.phoneNumber || 'N/A',
+        subaccount_code: subaccount, // ✅ Store for payment routing
         amenities: [],
-        createdAt: serverTimestamp(),
+        createdAt: firestore.FieldValue.serverTimestamp(),
       });
 
       Alert.alert('Success', 'Apartment added successfully!');
@@ -58,14 +90,12 @@ const AddApartmentScreen = ({ navigation }) => {
         style={styles.input}
         value={title}
         onChangeText={setTitle}
-        placeholderTextColor="#888"
       />
       <TextInput
         placeholder="Location"
         style={styles.input}
         value={location}
         onChangeText={setLocation}
-        placeholderTextColor="#888"
       />
       <TextInput
         placeholder="Price (GHS)"
@@ -73,7 +103,6 @@ const AddApartmentScreen = ({ navigation }) => {
         value={price}
         onChangeText={setPrice}
         keyboardType="numeric"
-        placeholderTextColor="#888"
       />
       <TextInput
         placeholder="Description"
@@ -81,8 +110,18 @@ const AddApartmentScreen = ({ navigation }) => {
         value={description}
         onChangeText={setDescription}
         multiline
-        placeholderTextColor="#888"
       />
+
+      <TouchableOpacity style={styles.imagePicker} onPress={handlePickImages}>
+        <Icon name="add-a-photo" size={24} color="#00C9A7" />
+        <Text style={styles.imagePickerText}>Pick Images</Text>
+      </TouchableOpacity>
+
+      <ScrollView horizontal style={styles.previewContainer}>
+        {images.map((img, index) => (
+          <Image key={index} source={{ uri: img }} style={styles.previewImage} />
+        ))}
+      </ScrollView>
 
       <Button
         mode="contained"
@@ -106,6 +145,25 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
+  },
+  imagePicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  imagePickerText: {
+    color: '#00C9A7',
+    marginLeft: 10,
+    fontWeight: 'bold',
+  },
+  previewContainer: {
+    marginBottom: 15,
+  },
+  previewImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    marginRight: 10,
   },
   button: {
     marginTop: 10,
