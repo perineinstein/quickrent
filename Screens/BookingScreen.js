@@ -1,79 +1,131 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
-import { Card, Title, Paragraph, Button } from 'react-native-paper';
+import {
+  View, Text, StyleSheet, ScrollView
+} from 'react-native';
+import { Card, Title, Paragraph, Button, Snackbar } from 'react-native-paper';
 import { auth, db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const BookingScreen = ({ route, navigation }) => {
   const { apartment } = route.params;
-  const user = auth.currentUser;
   const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
+
+  const showSnackbar = (msg) => setSnackbar({ visible: true, message: msg });
 
   const handleBookApartment = async () => {
-    if (!user) {
-      Alert.alert('Login Required', 'Please log in to book an apartment.');
-      return;
-    }
-
     setLoading(true);
-
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        showSnackbar('You must be logged in to book.');
+        return;
+      }
+
       await addDoc(collection(db, 'bookings'), {
         userId: user.uid,
         apartmentId: apartment.id,
         apartmentTitle: apartment.title,
         timestamp: serverTimestamp(),
-        status: 'pending'
+        status: 'pending',
       });
 
-      Alert.alert('Booking Created', 'Proceed to payment');
-      navigation.navigate('Payment', { apartment });
+      showSnackbar('Booking confirmed! Proceeding to payment...');
+      setTimeout(() => navigation.navigate('Payment', { apartment }), 1500);
 
-    } catch (err) {
-      console.error('Booking error:', err);
-      Alert.alert('Error', 'Failed to confirm booking. Try again.');
+    } catch (error) {
+      console.error('Booking error:', error);
+      showSnackbar('Failed to confirm booking.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Title style={styles.header}>Confirm Booking</Title>
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>Book Apartment</Text>
 
-      <Card style={styles.card}>
+      <Card style={styles.detailsCard}>
         <Card.Content>
           <Title style={styles.title}>{apartment.title}</Title>
           <Paragraph style={styles.location}>{apartment.location}</Paragraph>
-          <Paragraph style={styles.price}>GHS {apartment.price} / month</Paragraph>
+          <Paragraph style={styles.price}>GHS {apartment.price}/month</Paragraph>
         </Card.Content>
       </Card>
 
-      <Text style={styles.confirmation}>Do you want to book this apartment?</Text>
+      <Text style={styles.confirmationText}>
+        Are you sure you want to book this apartment?
+      </Text>
 
       <Button
         mode="contained"
-        loading={loading}
         onPress={handleBookApartment}
+        loading={loading}
+        disabled={loading}
         style={styles.bookButton}
         labelStyle={styles.buttonText}
       >
-        Confirm & Proceed to Payment
+        Confirm Booking
       </Button>
-    </View>
+
+      <Snackbar
+        visible={snackbar.visible}
+        onDismiss={() => setSnackbar({ visible: false, message: '' })}
+        duration={3000}
+        style={{ backgroundColor: '#2A2A2A' }}
+      >
+        {snackbar.message}
+      </Snackbar>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#1A1A1A' },
-  header: { fontSize: 24, fontWeight: 'bold', color: 'white', marginBottom: 20 },
-  card: { backgroundColor: '#2A2A2A', marginBottom: 20 },
-  title: { color: 'white', fontSize: 20, fontWeight: 'bold' },
-  location: { color: '#A0A0A0' },
-  price: { color: '#00C9A7', fontWeight: 'bold', fontSize: 16 },
-  confirmation: { color: 'white', textAlign: 'center', marginVertical: 20, fontSize: 16 },
-  bookButton: { backgroundColor: '#00C9A7', paddingVertical: 10 },
-  buttonText: { color: 'white', fontSize: 16, fontWeight: 'bold' }
+  container: {
+    flex: 1,
+    backgroundColor: '#1A1A1A',
+    padding: 20
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 20,
+    textAlign: 'center'
+  },
+  detailsCard: {
+    marginBottom: 20,
+    backgroundColor: '#2A2A2A',
+  },
+  title: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  location: {
+    color: '#A0A0A0',
+    fontSize: 16,
+  },
+  price: {
+    color: '#00C9A7',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  confirmationText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    marginVertical: 20,
+  },
+  bookButton: {
+    backgroundColor: '#00C9A7',
+    paddingVertical: 10,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
 
 export default BookingScreen;

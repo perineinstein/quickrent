@@ -28,6 +28,8 @@ import NotificationsScreen from './Screens/NotificationsScreen';
 import ChatScreen from './Screens/ChatScreen';
 import BookingScreen from './Screens/BookingScreen';
 import PaymentScreen from './Screens/PaymentsScreen';
+import TermsScreen from './Screens/TermsScreen'
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -160,6 +162,8 @@ export default function AppNavigator() {
             <Stack.Screen name="MyPayments" component={MyPaymentsScreen} />
             <Stack.Screen name="ReceivedPayments" component={ReceivedPaymentsScreen} />
             <Stack.Screen name="AddBankDetails" component={AddBankDetailsScreen} />
+            <Stack.Screen name="Terms" component={TermsScreen} />
+
 
 
 

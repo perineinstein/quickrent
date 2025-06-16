@@ -1,115 +1,94 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Swiper from 'react-native-swiper';
 import { Button } from 'react-native-paper';
+import Onboarding1 from '../assets/illustrations/onboarding1.svg';
+import Onboarding2 from '../assets/illustrations/onboarding2.svg';
+import Onboarding3 from '../assets/illustrations/onboarding3.svg';
 
 const { width } = Dimensions.get('window');
 
-const slides = [
-  {
-    image: require('../assets/search.png'),
-    title: 'Find Apartments Easily',
-    description: 'Browse and discover apartments in your preferred location with ease.',
-  },
-  {
-    image: require('../assets/add-apartment.png'),
-    title: 'Post Apartments for Rent',
-    description: 'Landlords can list apartments with images, price, and description.',
-  },
-  {
-    image: require('../assets/dashboard.png'),
-    title: 'Dashboard for Landlords',
-    description: 'Track bookings and view payment history from one place.',
-  },
-  {
-    image: require('../assets/payment.png'),
-    title: 'Secure Booking & Payment',
-    description: 'Book apartments and make secure payments through the app.',
-  },
-  {
-    image: require('../assets/help.png'),
-    title: 'In-App Support',
-    description: 'Chat with support or report issues directly from the app.',
-  },
-];
-
 const OnboardingScreen = ({ navigation }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const slides = [
+    {
+      title: 'Find Hostels Easily',
+      text: 'Browse verified student apartments and book from anywhere.',
+      image: <Onboarding1 width={250} height={250} />,
+    },
+    {
+      title: 'List Your Property',
+      text: 'Landlords can showcase hostels and manage listings easily.',
+      image: <Onboarding2 width={250} height={250} />,
+    },
+    {
+      title: 'Track Bookings & Payments',
+      text: 'Get payment insights and manage bookings in one place.',
+      image: <Onboarding3 width={250} height={250} />,
+    },
+  ];
+
   return (
-    <Swiper
-      loop={false}
-      dotStyle={styles.dot}
-      activeDotStyle={styles.activeDot}
-      showsButtons={false}
-    >
-      {slides.map((slide, index) => (
-        <View key={index} style={styles.slide}>
-          <Image source={slide.image} style={styles.image} resizeMode="contain" />
-          <Text style={styles.title}>{slide.title}</Text>
-          <Text style={styles.description}>{slide.description}</Text>
-          {index === slides.length - 1 && (
-            <Button
-              mode="contained"
-              onPress={() => navigation.replace('Login')}
-              style={styles.button}
-              labelStyle={styles.buttonText}
-            >
-              Get Started
-            </Button>
-          )}
-        </View>
-      ))}
-    </Swiper>
+    <View style={styles.container}>
+      <Swiper
+        loop={false}
+        showsPagination={true}
+        onIndexChanged={setActiveIndex}
+        activeDotColor="#00C9A7"
+      >
+        {slides.map((slide, i) => (
+          <View style={styles.slide} key={i}>
+            {slide.image}
+            <Text style={styles.title}>{slide.title}</Text>
+            <Text style={styles.text}>{slide.text}</Text>
+          </View>
+        ))}
+      </Swiper>
+
+      <Button
+        mode="contained"
+        onPress={() => navigation.replace('Login')}
+        style={styles.button}
+        labelStyle={styles.buttonLabel}
+      >
+        {activeIndex === slides.length - 1 ? 'Get Started' : 'Skip'}
+      </Button>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#1A1A1A' },
   slide: {
     flex: 1,
-    backgroundColor: '#1A1A1A',
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-  },
-  image: {
-    width: width * 0.7,
-    height: 250,
-    marginBottom: 30,
+    justifyContent: 'center',
+    paddingHorizontal: 30,
   },
   title: {
-    fontSize: 22,
-    fontWeight: 'bold',
+    fontSize: 24,
     color: 'white',
-    marginBottom: 10,
+    fontWeight: 'bold',
+    marginTop: 20,
     textAlign: 'center',
   },
-  description: {
-    fontSize: 16,
+  text: {
     color: '#A0A0A0',
+    fontSize: 16,
+    marginTop: 10,
     textAlign: 'center',
-    marginBottom: 20,
-  },
-  dot: {
-    backgroundColor: '#555',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 3,
-  },
-  activeDot: {
-    backgroundColor: '#00C9A7',
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginHorizontal: 3,
+    lineHeight: 22,
   },
   button: {
     backgroundColor: '#00C9A7',
-    marginTop: 20,
-    paddingHorizontal: 30,
+    margin: 20,
+    borderRadius: 8,
   },
-  buttonText: {
+  buttonLabel: {
     color: 'white',
     fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

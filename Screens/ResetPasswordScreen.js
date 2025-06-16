@@ -1,102 +1,69 @@
-// ✅ Firebase-compatible ResetPasswordScreen.js
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
-import { auth } from '../firebase'; // adjust path to your firebase.js
+import { auth } from '../firebase';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const ResetPasswordScreen = ({ route, navigation }) => {
-  const { email } = route.params;
-  const [code, setCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+const ResetPasswordScreen = ({ navigation }) => {
+  const [email, setEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [message, setMessage] = useState(null);
 
-  const handleResetPassword = async () => {
-    if (!code || !newPassword) {
-      Alert.alert('Error', 'All fields are required.');
-      return;
-    }
-    setLoading(true);
+  const handleReset = async () => {
+    setSending(true);
     try {
-      await auth.confirmPasswordReset(code, newPassword);
-      Alert.alert('Success', 'Password reset successful!');
-      navigation.navigate('Login');
+      await auth.sendPasswordResetEmail(email);
+      setMessage('Password reset email sent. Please check your inbox.');
     } catch (error) {
-      console.error('Reset error:', error);
-      Alert.alert('Error', error.message);
+      console.error('Reset error:', error.message);
+      setMessage('Something went wrong. Please try again.');
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Reset Password</Text>
-      <Text style={styles.subHeader}>Check your email for a reset link or code.</Text>
+      <Icon name="lock-reset" size={80} color="#00C9A7" style={styles.icon} />
+      <Text style={styles.title}>Reset Password</Text>
+      <Text style={styles.subtitle}>Enter your email to receive reset instructions</Text>
 
       <TextInput
-        label="Verification Code"
-        mode="outlined"
-        value={code}
-        onChangeText={setCode}
+        label="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
         style={styles.input}
-        keyboardType="number-pad"
-      />
-
-      <TextInput
-        label="New Password"
         mode="outlined"
-        value={newPassword}
-        onChangeText={setNewPassword}
-        style={styles.input}
-        secureTextEntry
+        left={<TextInput.Icon name="email" />}
       />
 
       <Button
         mode="contained"
-        onPress={handleResetPassword}
-        loading={loading}
+        onPress={handleReset}
+        loading={sending}
+        disabled={!email}
         style={styles.button}
         labelStyle={styles.buttonText}
       >
-        Submit
+        Send Reset Link
       </Button>
+
+      {message && <Text style={styles.message}>{message}</Text>}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#1A1A1A',
-    justifyContent: 'center',
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  subHeader: {
-    fontSize: 16,
-    color: '#A0A0A0',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
-  input: {
-    marginBottom: 20,
-    backgroundColor: '#2A2A2A',
-  },
-  button: {
-    backgroundColor: '#00C9A7',
-    paddingVertical: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, justifyContent: 'center', backgroundColor: '#1A1A1A', padding: 24 },
+  icon: { alignSelf: 'center', marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', color: 'white', textAlign: 'center' },
+  subtitle: { color: '#A0A0A0', fontSize: 14, textAlign: 'center', marginBottom: 30 },
+  input: { marginBottom: 20, backgroundColor: '#2A2A2A' },
+  button: { backgroundColor: '#00C9A7', paddingVertical: 10, borderRadius: 8 },
+  buttonText: { fontWeight: 'bold', color: 'white' },
+  message: { textAlign: 'center', color: '#00C9A7', marginTop: 20, fontSize: 14 },
 });
 
 export default ResetPasswordScreen;

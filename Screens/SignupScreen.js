@@ -126,6 +126,15 @@ const SignupScreen = ({ navigation }) => {
           <Text style={styles.loginLink}>Login</Text>
         </TouchableOpacity>
       </View>
+
+
+      <View style={styles.termsContainer}>
+        <Text style={styles.termsText}>By creating an account, you agree to our </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Terms')}>
+          <Text style={styles.termsLink}>Terms & Conditions</Text>
+        </TouchableOpacity>
+      </View>
+
     </View>
   );
 };
@@ -204,7 +213,24 @@ const styles = StyleSheet.create({
   userTypeText: {
     color: 'white',
     fontWeight: 'bold',
-  }
+  },
+  termsContainer: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginTop: 15,
+  flexWrap: 'wrap',
+},
+termsText: {
+  color: '#A0A0A0',
+  fontSize: 14,
+},
+termsLink: {
+  color: '#00C9A7',
+  fontWeight: 'bold',
+  fontSize: 14,
+},
+
 });
 
 export default SignupScreen;

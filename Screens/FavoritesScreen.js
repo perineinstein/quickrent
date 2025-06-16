@@ -1,74 +1,67 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator
-} from 'react-native';
-import { Card, Title, Paragraph } from 'react-native-paper';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { Card, Title, Paragraph, Snackbar } from 'react-native-paper';
 import { auth, db } from '../firebase';
-import {
-  collection,
-  getDocs,
-  doc,
-  getDoc
-} from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import SvgIllustration from '../assets/illustrations/empty-favorites.svg'; // ✅ your SVG file
 
-const FavoritesScreen = ({ navigation }) => {
+const FavoritesScreen = () => {
   const [favorites, setFavorites] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
+
   const user = auth.currentUser;
 
-  const fetchFavorites = async () => {
-    try {
-      const favSnapshot = await getDocs(collection(db, 'users', user.uid, 'favorites'));
-      const favApartmentIds = favSnapshot.docs.map(doc => doc.id);
-
-      const apartmentsData = [];
-      for (const aptId of favApartmentIds) {
-        const aptDoc = await getDoc(doc(db, 'apartments', aptId));
-        if (aptDoc.exists()) {
-          apartmentsData.push({ id: aptDoc.id, ...aptDoc.data() });
-        }
-      }
-
-      setFavorites(apartmentsData);
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const showSnackbar = (msg) => setSnackbar({ visible: true, message: msg });
 
   useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, `users/${user.uid}/favorites`));
+        const data = snapshot.docs.map(doc => doc.id); // Store apartment IDs
+        setFavorites(data);
+      } catch (error) {
+        console.error('Error fetching favorites:', error);
+        showSnackbar('Failed to load favorites');
+      }
+    };
+
     fetchFavorites();
   }, []);
-
-  const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('ApartmentDetails', { apartmentId: item.id })}>
-      <Card style={styles.card}>
-        <Card.Cover source={{ uri: item.images?.[0] || '' }} />
-        <Card.Content>
-          <Title style={styles.cardTitle}>{item.title}</Title>
-          <Paragraph style={styles.cardLocation}>{item.location}</Paragraph>
-          <Paragraph style={styles.cardPrice}>GHS {item.price}/month</Paragraph>
-        </Card.Content>
-      </Card>
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>My Favorites</Text>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#00C9A7" />
-      ) : favorites.length > 0 ? (
+      {favorites.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <SvgIllustration width={200} height={200} />
+          <Text style={styles.emptyText}>No favorite apartments yet.</Text>
+        </View>
+      ) : (
         <FlatList
           data={favorites}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item}
+          renderItem={({ item }) => (
+            <Card style={styles.card}>
+              <Card.Content>
+                <Title style={styles.title}>{item}</Title>
+                <Paragraph style={styles.text}>Apartment ID</Paragraph>
+              </Card.Content>
+            </Card>
+          )}
+          contentContainerStyle={styles.list}
         />
-      ) : (
-        <Text style={styles.emptyText}>You have no favorites yet.</Text>
       )}
+
+      <Snackbar
+        visible={snackbar.visible}
+        onDismiss={() => setSnackbar({ visible: false, message: '' })}
+        duration={3000}
+        style={{ backgroundColor: '#2A2A2A' }}
+      >
+        {snackbar.message}
+      </Snackbar>
     </View>
   );
 };
@@ -77,10 +70,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1A1A1A', padding: 20 },
   header: { fontSize: 24, fontWeight: 'bold', color: 'white', marginBottom: 20 },
   card: { marginBottom: 15, backgroundColor: '#2A2A2A' },
-  cardTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  cardLocation: { color: '#A0A0A0' },
-  cardPrice: { color: '#00C9A7', fontWeight: 'bold' },
-  emptyText: { textAlign: 'center', color: '#A0A0A0', marginTop: 30 },
+  title: { color: 'white' },
+  text: { color: '#A0A0A0' },
+  list: { paddingBottom: 80 },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 40
+  },
+  emptyText: {
+    color: '#A0A0A0',
+    fontSize: 16,
+    marginTop: 20,
+    textAlign: 'center'
+  }
 });
 
 export default FavoritesScreen;

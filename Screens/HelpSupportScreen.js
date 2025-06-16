@@ -1,106 +1,122 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { Card, Title, Paragraph, Button } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { TextInput, Button, Snackbar } from 'react-native-paper';
+import { auth, db } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-const HelpSupportScreen = ({ navigation }) => {
-  const faqs = [
-    {
-      question: 'How do I search for apartments?',
-      answer: 'Use the search bar on the Home Screen to find apartments by location, price, or type.',
-    },
-    {
-      question: 'How do I pay rent?',
-      answer: 'Go to the Payments Screen and select the apartment you want to pay for. Follow the prompts to complete the payment.',
-    },
-    {
-      question: 'How do I contact a landlord?',
-      answer: 'On the Apartment Details Screen, use the "Call" or "Message" buttons to contact the landlord directly.',
-    },
-  ];
+const HelpSupportScreen = () => {
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
+  const [loading, setLoading] = useState(false);
+
+  const showSnackbar = (msg) => setSnackbar({ visible: true, message: msg });
+
+  const handleSubmit = async () => {
+    if (!subject || !message) {
+      showSnackbar('Please fill in both fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const user = auth.currentUser;
+      await addDoc(collection(db, 'support_requests'), {
+        userId: user.uid,
+        subject,
+        message,
+        timestamp: serverTimestamp(),
+      });
+      setSubject('');
+      setMessage('');
+      showSnackbar('Message sent to support team!');
+    } catch (error) {
+      console.error('Support error:', error);
+      showSnackbar('Failed to send message.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Help & Support</Text>
-      </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.header}>Need Help?</Text>
+      <Text style={styles.subHeader}>We’re here to support you. Submit your issue below.</Text>
 
-      {/* FAQ Section */}
-      <Card style={styles.faqCard}>
-        <Card.Content>
-          <Title style={styles.faqTitle}>Frequently Asked Questions</Title>
-          {faqs.map((faq, index) => (
-            <View key={index} style={styles.faqItem}>
-              <Text style={styles.faqQuestion}>{faq.question}</Text>
-              <Text style={styles.faqAnswer}>{faq.answer}</Text>
-            </View>
-          ))}
-        </Card.Content>
-      </Card>
+      <TextInput
+        label="Subject"
+        value={subject}
+        onChangeText={setSubject}
+        mode="outlined"
+        style={styles.input}
+        left={<TextInput.Icon name="help-circle" />}
+      />
 
-      {/* Contact Support Button */}
+      <TextInput
+        label="Message"
+        value={message}
+        onChangeText={setMessage}
+        multiline
+        numberOfLines={5}
+        mode="outlined"
+        style={[styles.input, { height: 120 }]}
+      />
+
       <Button
         mode="contained"
-        onPress={() => navigation.navigate('ContactSupport')}
-        style={styles.contactButton}
+        onPress={handleSubmit}
+        loading={loading}
+        style={styles.submitButton}
         labelStyle={styles.buttonText}
       >
-        Contact Support
+        Send Message
       </Button>
+
+      <Snackbar
+        visible={snackbar.visible}
+        onDismiss={() => setSnackbar({ visible: false, message: '' })}
+        duration={3000}
+        style={{ backgroundColor: '#2A2A2A' }}
+      >
+        {snackbar.message}
+      </Snackbar>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 20,
+    padding: 24,
     backgroundColor: '#1A1A1A',
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
-  },
-  faqCard: {
-    marginBottom: 20,
-    backgroundColor: '#2A2A2A',
-  },
-  faqTitle: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 10,
   },
-  faqItem: {
-    marginBottom: 15,
-  },
-  faqQuestion: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  faqAnswer: {
-    color: '#A0A0A0',
+  subHeader: {
     fontSize: 14,
-    marginTop: 5,
+    color: '#A0A0A0',
+    textAlign: 'center',
+    marginBottom: 30,
   },
-  contactButton: {
-    marginTop: 20,
+  input: {
+    marginBottom: 16,
+    backgroundColor: '#2A2A2A',
+  },
+  submitButton: {
     backgroundColor: '#00C9A7',
-    paddingVertical: 8,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 10,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 16,
     fontWeight: 'bold',
+    color: 'white',
   },
 });
 
