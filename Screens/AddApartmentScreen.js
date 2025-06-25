@@ -55,6 +55,12 @@ const AddApartmentScreen = ({ navigation }) => {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       const subaccount = userDoc.exists() ? userDoc.data().subaccount_code : null;
 
+      if (!subaccount) {
+        Alert.alert('Missing Bank Info', 'You must complete your bank/mobile money setup before posting an apartment.');
+        setUploading(false);
+        return;
+      }
+
       const imageUrls = await uploadImages();
 
       await firestore().collection('apartments').add({
@@ -65,10 +71,13 @@ const AddApartmentScreen = ({ navigation }) => {
         images: imageUrls,
         landlordId: user.uid,
         landlordPhone: user.phoneNumber || 'N/A',
-        subaccount_code: subaccount, // ✅ Store for payment routing
+        landlordName: userDoc.data().name || 'Landlord',
+        landlordEmail: user.email,
+        subaccount_code: subaccount, // ✅ Required for payment split
         amenities: [],
         createdAt: firestore.FieldValue.serverTimestamp(),
       });
+
 
       Alert.alert('Success', 'Apartment added successfully!');
       navigation.goBack();
