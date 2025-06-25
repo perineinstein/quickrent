@@ -59,7 +59,7 @@ const PaymentScreen = ({ route, navigation }) => {
 
       {showPaystack && (
         <Paystack
-          paystackKey="pk_live_xxxxxxxxxxxxxxxxxxxxx" // Replace with your real Paystack public key
+          paystackKey="pk_test_35faf0ddf4469b1faf4fde5863936acddeabbec6" // Replace with your real Paystack public key
           amount={Number(apartment.price) * 100} // amount in kobo
           billingEmail={user.email}
           activityIndicatorColor="#00C9A7"
@@ -68,6 +68,12 @@ const PaymentScreen = ({ route, navigation }) => {
           autoStart={true}
           subaccount={apartment.subaccount_code} // ✅ 🔥 CRITICAL LINE
           bearer="subaccount" // ✅ landlord receives 95%, you get 5%
+
+          metadata={{
+            apartmentId: apartment.id,
+            userId: user.uid,
+            userEmail: user.email,
+          }}
         />
       )}
     </View>
